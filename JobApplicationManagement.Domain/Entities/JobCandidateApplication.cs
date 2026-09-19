@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace JobApplicationManagement.Domain
+namespace JobApplicationManagement.Domain.Entities
 {
     public class JobCandidateApplication
     {

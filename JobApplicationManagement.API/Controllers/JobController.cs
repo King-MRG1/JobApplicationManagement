@@ -1,4 +1,4 @@
-﻿using JobApplicationManagement.Application;
+using JobApplicationManagement.Application.Dtos.JobDto;
 using JobApplicationManagement.Application.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -29,8 +29,8 @@ namespace JobApplicationManagement.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateJob([FromBody] CreateJobDto jobDto)
         {
-            var id = await _jobServices.CreateAsync(jobDto);
-            return CreatedAtAction(nameof(GetJobById), new { id }, null);
+            var createdJob = await _jobServices.CreateAsync(jobDto);
+            return CreatedAtAction(nameof(GetJobById), new { id = createdJob.Id }, createdJob);
         }
     }
 }

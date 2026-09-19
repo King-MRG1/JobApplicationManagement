@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,7 +10,7 @@ namespace JobApplicationManagement.Domain.Enums
         UnderReview , 
         InterView , 
         Accepted , 
-        Rejected
-
+        Rejected,
+        Cancelled
     }
 }

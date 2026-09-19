@@ -1,4 +1,4 @@
-﻿using JobApplicationManagement.Domain;
+using JobApplicationManagement.Domain;
 using JobApplicationManagement.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

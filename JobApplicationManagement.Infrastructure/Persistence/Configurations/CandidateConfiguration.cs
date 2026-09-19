@@ -1,4 +1,4 @@
-﻿using JobApplicationManagement.Domain;
+using JobApplicationManagement.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;

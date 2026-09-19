@@ -24,7 +24,7 @@ namespace JobApplicationManagement.API
             options.UseSqlServer(connectionString));
 
             builder.Services.AddScoped<JobServices>();
-            builder.Services.AddScoped<IGenericRepository<Job>, GenericRepository<Job>>();
+            builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
             builder.Services.AddOpenApi();
 
