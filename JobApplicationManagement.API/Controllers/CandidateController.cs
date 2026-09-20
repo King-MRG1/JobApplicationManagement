@@ -1,5 +1,8 @@
 using JobApplicationManagement.Application.Dtos.CandidateDto;
+using JobApplicationManagement.Application.Interfaces;
 using JobApplicationManagement.Application.Services;
+using JobApplicationManagement.Infrastructure.Migrations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,9 +13,11 @@ namespace JobApplicationManagement.API.Controllers
     public class CandidateController : ControllerBase
     {
         private readonly CandidateServices _candidateServices;
-        public CandidateController(CandidateServices candidateServices)
+        private readonly ICurrentUserService _currentUserService;
+        public CandidateController(CandidateServices candidateServices, ICurrentUserService currentUserService)
         {
             _candidateServices = candidateServices;
+            _currentUserService = currentUserService;
         }
         /// <summary>GET /api/candidate/{id}</summary>
         [HttpGet("{id}")]
@@ -24,11 +29,18 @@ namespace JobApplicationManagement.API.Controllers
             return Ok(candidate);
         }
         /// <summary>POST /api/candidate — creates a new candidate record.</summary>
-        [HttpPost]
-        public async Task<IActionResult> CreateCandidate([FromBody] CreateCandidateDto dto)
-        {
-            var candidate = await _candidateServices.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetCandidateById), new { id = candidate.Id }, candidate);
-        }
+        //[HttpPost]
+        //[Authorize]
+        //public async Task<IActionResult> CreateCandidate([FromBody] CreateCandidateDto dto)
+        //{
+        //    var CandidateId =  _currentUserService.CandidateId;
+
+        //    if(CandidateId is null)
+        //    {
+        //        return Forbid();
+        //    }
+        //    var candidate = await _candidateServices.CreateAsync(dto, CandidateId);
+        //    return CreatedAtAction(nameof(GetCandidateById), new { id = candidate.Id }, candidate);
+        //}
     }
 }

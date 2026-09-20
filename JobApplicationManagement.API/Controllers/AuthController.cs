@@ -71,8 +71,8 @@ namespace JobApplicationManagement.API.Controllers
                 await _candidateServices.CreateAsync(new CreateCandidateDto
                 {
                     Name = dto.FullName,
-                    CvUrl = string.Empty   // CvUrl can be updated by the candidate later
-                });
+                    CvUrl  = string.Empty,
+                }, user.Id);
             }
             var roles = await _userManager.GetRolesAsync(user);
             var token = _tokenService.GenerateToken(user, roles, recruiterId);

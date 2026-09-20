@@ -16,12 +16,13 @@ namespace JobApplicationManagement.Application.Services
             if (candidate is null) return null;
             return MapToDto(candidate);
         }
-        public async Task<CandidateResponseDto> CreateAsync(CreateCandidateDto createCandidateDto)
+        public async Task<CandidateResponseDto> CreateAsync(CreateCandidateDto createCandidateDto, string userId)
         {
             var candidate = new Candidate
             {
                 Name = createCandidateDto.Name,
-                CvUrl = createCandidateDto.CvUrl
+                CvUrl = createCandidateDto.CvUrl,
+                UserId = userId
             };
             await _candidateRepository.AddAsync(candidate);
             await _candidateRepository.SaveChangesAsync();
