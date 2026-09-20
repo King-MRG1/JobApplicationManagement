@@ -56,7 +56,12 @@ namespace JobApplicationManagement.API.Controllers
         {
             try
             {
-                var application = await _applicationServices.CancelApplicationAsync(id);
+                var candidateId = _currentUserService.CandidateId;
+                if (candidateId is null)
+                {
+                    return Forbid();
+                }
+                var application = await _applicationServices.CancelApplicationAsync(id, candidateId.Value);
                 return Ok(application);
             }
             catch (DomainException ex)

@@ -45,10 +45,14 @@ namespace JobApplicationManagement.Application.Services
         /// <see cref="JobApplicationStatus.UnderReview"/>; throws a <see cref="DomainException"/>
         /// for any other status.
         /// </summary>
-        public async Task<JobApplicationResponseDto> CancelApplicationAsync(int applicationId)
+        public async Task<JobApplicationResponseDto> CancelApplicationAsync(int applicationId, int candidateId)
         {
             var application = await _applicationRepository.GetByIdAsync(applicationId)
                 ?? throw new DomainException($"Application with id {applicationId} was not found.");
+            if (application.CandidateId != candidateId)
+            {
+                throw new DomainException("You are not authorised to cancel this application.");
+            }
             if (application.JobApplicationStatus != JobApplicationStatus.Applied &&
                 application.JobApplicationStatus != JobApplicationStatus.UnderReview)
             {

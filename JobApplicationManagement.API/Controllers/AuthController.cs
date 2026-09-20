@@ -17,19 +17,22 @@ namespace JobApplicationManagement.API.Controllers
         private readonly TokenService _tokenService;
         private readonly RecruiterServices _recruiterServices;
         private readonly CandidateServices _candidateServices;
+        private readonly IConfiguration _configuration;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             TokenService tokenService,
             RecruiterServices recruiterServices,
-            CandidateServices candidateServices)
+            CandidateServices candidateServices,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _tokenService = tokenService;
             _recruiterServices = recruiterServices;
             _candidateServices = candidateServices;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -76,10 +79,11 @@ namespace JobApplicationManagement.API.Controllers
             }
             var roles = await _userManager.GetRolesAsync(user);
             var token = _tokenService.GenerateToken(user, roles, recruiterId);
+            var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "60");
             return Ok(new AuthResponseDto
             {
                 Token = token,
-                Expiration = DateTime.UtcNow.AddMinutes(60) // mirrors TokenService default
+                Expiration = DateTime.UtcNow.AddMinutes(expirationMinutes)
             });
         }
 
@@ -101,11 +105,12 @@ namespace JobApplicationManagement.API.Controllers
                 var recruiter = await _recruiterServices.GetByUserIdAsync(user.Id);
                 recruiterId = recruiter?.Id;
             }
+            var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "60");
             var token = _tokenService.GenerateToken(user, roles, recruiterId);
             return Ok(new AuthResponseDto
             {
                 Token = token,
-                Expiration = DateTime.UtcNow.AddMinutes(60)
+                Expiration = DateTime.UtcNow.AddMinutes(expirationMinutes)
             });
         }
     }

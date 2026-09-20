@@ -9,7 +9,9 @@ namespace JobApplicationManagement.Application.Interfaces
     {
         /// <summary>The recruiter id embedded in the JWT, or null if the user is not a recruiter.</summary>
         int? RecruiterId { get; }
-        /// <summary>The raw IdentityUser id (sub claim) from the JWT.</summary>
+        /// <summary>The candidate id embedded in the JWT, or null if the user is not a candidate.</summary>
         int? CandidateId { get; }
+        /// <summary>The raw IdentityUser id (sub claim) from the JWT.</summary>
+        string? UserId { get; }
     }
 }
