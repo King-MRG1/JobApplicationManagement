@@ -33,7 +33,8 @@ namespace JobApplicationManagement.API.Controllers
         [Authorize(Roles = "Recruiter")]
         public async Task<IActionResult> CreateJob([FromBody] CreateJobDto jobDto)
         {
-            var job = await _jobServices.CreateAsync(jobDto);
+            var recruiterId = _currentUserService.RecruiterId;
+            var job = await _jobServices.CreateAsync(jobDto, recruiterId.Value);
             return CreatedAtAction(nameof(GetJobById), new { id = job.Id }, job);
         }
         /// <summary>

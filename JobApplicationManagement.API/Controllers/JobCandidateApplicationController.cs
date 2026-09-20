@@ -1,6 +1,7 @@
 using JobApplicationManagement.Application.Dtos.JobApplicationDto;
 using JobApplicationManagement.Application.Services;
 using JobApplicationManagement.Domain.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace JobApplicationManagement.API.Controllers
 {
@@ -24,6 +25,7 @@ namespace JobApplicationManagement.API.Controllers
         }
         /// <summary>POST /api/jobcandidateapplication — submits a new job application.</summary>
         [HttpPost]
+        [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> CreateApplication([FromBody] CreateJobApplicationDto dto)
         {
             try
@@ -41,6 +43,7 @@ namespace JobApplicationManagement.API.Controllers
         /// Only allowed while status is Applied or UnderReview.
         /// </summary>
         [HttpPatch("{id}/cancel")]
+        [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> CancelApplication(int id)
         {
             try

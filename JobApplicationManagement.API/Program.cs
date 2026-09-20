@@ -72,7 +72,6 @@ namespace JobApplicationManagement.API
                 app.MapScalarApiReference();
             }
             app.UseHttpsRedirection();
-            // IMPORTANT: Authentication MUST come before Authorization
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
