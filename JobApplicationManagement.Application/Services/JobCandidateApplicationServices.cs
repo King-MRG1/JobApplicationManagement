@@ -20,7 +20,7 @@ namespace JobApplicationManagement.Application.Services
         /// Creates a new job application.
         /// Validates that the target job exists and is currently active.
         /// </summary>
-        public async Task<JobApplicationResponseDto> CreateAsync(CreateJobApplicationDto dto)
+        public async Task<JobApplicationResponseDto> CreateAsync(CreateJobApplicationDto dto, int candidateId)
         {
             var job = await _jobRepository.GetByIdAsync(dto.JobId)
                 ?? throw new DomainException($"Job with id {dto.JobId} was not found.");
@@ -29,7 +29,7 @@ namespace JobApplicationManagement.Application.Services
             var now = DateTime.UtcNow;
             var application = new JobCandidateApplication
             {
-                CandidateId = dto.CandidateId,
+                CandidateId = candidateId,
                 JobId = dto.JobId,
                 JobApplicationStatus = JobApplicationStatus.Applied,
                 AppliedAt = now,

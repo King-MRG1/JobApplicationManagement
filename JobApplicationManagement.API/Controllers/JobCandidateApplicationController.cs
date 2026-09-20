@@ -1,4 +1,5 @@
 using JobApplicationManagement.Application.Dtos.JobApplicationDto;
+using JobApplicationManagement.Application.Interfaces;
 using JobApplicationManagement.Application.Services;
 using JobApplicationManagement.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -10,9 +11,11 @@ namespace JobApplicationManagement.API.Controllers
     public class JobCandidateApplicationController : ControllerBase
     {
         private readonly JobCandidateApplicationServices _applicationServices;
-        public JobCandidateApplicationController(JobCandidateApplicationServices applicationServices)
+        private readonly ICurrentUserService _currentUserService;
+        public JobCandidateApplicationController(JobCandidateApplicationServices applicationServices, ICurrentUserService currentUserService)
         {
             _applicationServices = applicationServices;
+            _currentUserService = currentUserService;
         }
         /// <summary>GET /api/jobcandidateapplication/{id}</summary>
         [HttpGet("{id}")]
@@ -30,7 +33,12 @@ namespace JobApplicationManagement.API.Controllers
         {
             try
             {
-                var application = await _applicationServices.CreateAsync(dto);
+                var candidateId = _currentUserService.CandidateId;
+                if (candidateId is null)
+                {
+                    return Forbid();
+                }
+                var application = await _applicationServices.CreateAsync(dto, candidateId.Value);
                 return CreatedAtAction(nameof(GetApplicationById), new { id = application.Id }, application);
             }
             catch (DomainException ex)

@@ -6,7 +6,6 @@ namespace JobApplicationManagement.Application.Dtos.JobApplicationDto
 {
     public class CreateJobApplicationDto
     {
-        public int CandidateId { get; set; }
         public int JobId { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 using JobApplicationManagement.Application.Interfaces;
+using JobApplicationManagement.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 namespace JobApplicationManagement.Infrastructure.Services
@@ -17,6 +18,15 @@ namespace JobApplicationManagement.Infrastructure.Services
             get
             {
                 var value = _httpContextAccessor.HttpContext?.User.FindFirstValue("RecruiterId");
+                return int.TryParse(value, out var id) ? id : null;
+            }
+        }
+
+        public int? CandidateId
+        {
+            get
+            {
+                var value = _httpContextAccessor.HttpContext?.User.FindFirstValue("CandidateId");
                 return int.TryParse(value, out var id) ? id : null;
             }
         }
