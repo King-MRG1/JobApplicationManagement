@@ -16,12 +16,12 @@ namespace JobApplicationManagement.Infrastructure.Services
         }
         /// <inheritdoc />
         public string GenerateToken(ApplicationUser user, IList<string> roles)
-            => GenerateToken(user, roles, recruiterId: null);
+            => GenerateToken(user, roles, recruiterId: null, candidateId: null);
         /// <summary>
         /// Generates a JWT with an optional <c>RecruiterId</c> custom claim.
         /// The claim is read back by <see cref="CurrentUserService"/> on subsequent requests.
         /// </summary>
-        public string GenerateToken(ApplicationUser user, IList<string> roles, int? recruiterId)
+        public string GenerateToken(ApplicationUser user, IList<string> roles, int? recruiterId, int? candidateId)
         {
             var jwtSection = _configuration.GetSection("Jwt");
             var key = new SymmetricSecurityKey(
@@ -43,6 +43,8 @@ namespace JobApplicationManagement.Infrastructure.Services
                 claims.Add(new Claim(ClaimTypes.Role, role));
             if (recruiterId.HasValue)
                 claims.Add(new Claim("RecruiterId", recruiterId.Value.ToString()));
+            else if(candidateId.HasValue)
+                claims.Add(new Claim("CandidateId", candidateId.Value.ToString()));
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,

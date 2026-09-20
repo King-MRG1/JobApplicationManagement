@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JobApplicationManagement.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,6 +7,6 @@ namespace JobApplicationManagement.Application.Interfaces
 {
     public interface ITokenService
     {
-        string GenerateToken(Domain.Entities.ApplicationUser user, IList<string> roles);
+        string GenerateToken(ApplicationUser user, IList<string> roles);
     }
 }

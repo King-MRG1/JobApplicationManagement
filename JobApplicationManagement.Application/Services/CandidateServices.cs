@@ -28,6 +28,8 @@ namespace JobApplicationManagement.Application.Services
             await _candidateRepository.SaveChangesAsync();
             return MapToDto(candidate);
         }
+        public async Task<Candidate?> GetByUserIdAsync(string userId)
+            => await _candidateRepository.FindFirstAsync(r => r.UserId == userId);
         private static CandidateResponseDto MapToDto(Candidate candidate) => new()
         {
             Id = candidate.Id,

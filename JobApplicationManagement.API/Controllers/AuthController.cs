@@ -64,6 +64,7 @@ namespace JobApplicationManagement.API.Controllers
             await _userManager.AddToRoleAsync(user, normalizedRole);
             // Create linked domain record and embed RecruiterId in token if applicable
             int? recruiterId = null;
+            int? candidateId = null;
             if (normalizedRole == "Recruiter")
             {
                 var recruiter = await _recruiterServices.CreateAsync(dto.FullName, user.Id);
@@ -71,14 +72,15 @@ namespace JobApplicationManagement.API.Controllers
             }
             else
             {
-                await _candidateServices.CreateAsync(new CreateCandidateDto
+               var candidate = await _candidateServices.CreateAsync(new CreateCandidateDto
                 {
                     Name = dto.FullName,
                     CvUrl  = string.Empty,
                 }, user.Id);
+                candidateId = candidate.Id;
             }
             var roles = await _userManager.GetRolesAsync(user);
-            var token = _tokenService.GenerateToken(user, roles, recruiterId);
+            var token = _tokenService.GenerateToken(user, roles, recruiterId, candidateId);
             var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "60");
             return Ok(new AuthResponseDto
             {
@@ -105,8 +107,14 @@ namespace JobApplicationManagement.API.Controllers
                 var recruiter = await _recruiterServices.GetByUserIdAsync(user.Id);
                 recruiterId = recruiter?.Id;
             }
+            int? candidateId = null;
+            if (roles.Contains("Candidate"))
+            {
+                var candidate = await _candidateServices.GetByUserIdAsync(user.Id);
+                candidateId = candidate?.Id;
+            }
             var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "60");
-            var token = _tokenService.GenerateToken(user, roles, recruiterId);
+            var token = _tokenService.GenerateToken(user, roles, recruiterId, candidateId);
             return Ok(new AuthResponseDto
             {
                 Token = token,
