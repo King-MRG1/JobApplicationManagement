@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace JobApplicationManagement.Application
+namespace JobApplicationManagement.Application.Dtos.JobDto
 {
     public class CreateJobDto
     {

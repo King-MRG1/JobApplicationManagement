@@ -10,28 +10,25 @@ namespace JobApplicationManagement.API.Controllers
     public class CandidateController : ControllerBase
     {
         private readonly CandidateServices _candidateServices;
-
         public CandidateController(CandidateServices candidateServices)
         {
             _candidateServices = candidateServices;
         }
-
+        /// <summary>GET /api/candidate/{id}</summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCandidateById(int id)
         {
             var candidate = await _candidateServices.GetByIdAsync(id);
-            if (candidate == null)
-            {
+            if (candidate is null)
                 return NotFound();
-            }
             return Ok(candidate);
         }
-
+        /// <summary>POST /api/candidate — creates a new candidate record.</summary>
         [HttpPost]
-        public async Task<IActionResult> CreateCandidate([FromBody] CreateCandidateDto candidateDto)
+        public async Task<IActionResult> CreateCandidate([FromBody] CreateCandidateDto dto)
         {
-            var createdCandidate = await _candidateServices.CreateAsync(candidateDto);
-            return CreatedAtAction(nameof(GetCandidateById), new { id = createdCandidate.Id }, createdCandidate);
+            var candidate = await _candidateServices.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetCandidateById), new { id = candidate.Id }, candidate);
         }
     }
 }

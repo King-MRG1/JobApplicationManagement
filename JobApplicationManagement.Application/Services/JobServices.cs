@@ -1,56 +1,51 @@
 using JobApplicationManagement.Application.Dtos.JobDto;
 using JobApplicationManagement.Application.Interfaces;
 using JobApplicationManagement.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
+using JobApplicationManagement.Domain.Exceptions;
 namespace JobApplicationManagement.Application.Services
 {
     public class JobServices
     {
         private readonly IGenericRepository<Job> _jobRepository;
-
         public JobServices(IGenericRepository<Job> jobRepository)
         {
             _jobRepository = jobRepository;
         }
-
         public async Task<JobResponseDto?> GetByIdAsync(int id)
         {
             var job = await _jobRepository.GetByIdAsync(id);
-            if (job == null)
-            {
-                return null;
-            }
-
-            return MapToResponseDto(job);
+            if (job is null) return null;
+            return MapToDto(job);
         }
-
         public async Task<JobResponseDto> CreateAsync(CreateJobDto createJobDto)
         {
-            var job = new Job()
+            var job = new Job
             {
                 Title = createJobDto.Title,
                 Description = createJobDto.Description,
                 IsActive = true
             };
-
             await _jobRepository.AddAsync(job);
             await _jobRepository.SaveChangesAsync();
-
-            return MapToResponseDto(job);
+            return MapToDto(job);
         }
-
-        private JobResponseDto MapToResponseDto(Job job)
+        public async Task CloseJobAsync(int jobId, int recruiterId)
         {
-            return new JobResponseDto
-            {
-                Id = job.Id,
-                Title = job.Title,
-                Description = job.Description,
-                IsActive = job.IsActive
-            };
+            var job = await _jobRepository.GetByIdAsync(jobId)
+                ?? throw new DomainException($"Job with id {jobId} was not found.");
+            if (job.RecruiterId != recruiterId)
+                throw new DomainException("You are not authorised to close this job.");
+            job.IsActive = false;
+            _jobRepository.Update(job);
+            await _jobRepository.SaveChangesAsync();
         }
+        private static JobResponseDto MapToDto(Job job) => new()
+        {
+            Id = job.Id,
+            Title = job.Title,
+            Description = job.Description,
+            IsActive = job.IsActive,
+            RecruiterId = job.RecruiterId
+        };
     }
 }
