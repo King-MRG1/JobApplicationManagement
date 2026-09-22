@@ -1,8 +1,11 @@
-using JobApplicationManagement.Application;
 using JobApplicationManagement.Application.Dtos.JobDto;
+using JobApplicationManagement.Application.Features.Jobs.CloseJob;
+using JobApplicationManagement.Application.Features.Jobs.CreateJob;
+using JobApplicationManagement.Application.Features.Jobs.Queries.GetJobById;
+using JobApplicationManagement.Application.Features.Jobs.Queries.GetAllJob;
 using JobApplicationManagement.Application.Interfaces;
-using JobApplicationManagement.Application.Services;
 using JobApplicationManagement.Domain.Exceptions;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,36 +15,47 @@ namespace JobApplicationManagement.API.Controllers
     [ApiController]
     public class JobController : ControllerBase
     {
-        private readonly JobServices _jobServices;
+        private readonly IMediator _mediator;
         private readonly ICurrentUserService _currentUserService;
-        public JobController(JobServices jobServices, ICurrentUserService currentUserService)
+        public JobController( ICurrentUserService currentUserService, IMediator mediator)
         {
-            _jobServices = jobServices;
             _currentUserService = currentUserService;
+            _mediator = mediator;
         }
-        /// <summary>GET /api/job/{id}</summary>
+
+        [HttpGet("Jobs")]
+        public async Task<IActionResult> GetJobs()
+        {
+            var jobs = await _mediator.Send(new GetAllJobQuery());
+            return Ok(jobs);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetJobById(int id)
         {
-            var job = await _jobServices.GetByIdAsync(id);
+            var job = await _mediator.Send(new GetJobByIdQuery { Id = id });
             if (job is null)
                 return NotFound();
             return Ok(job);
         }
-        /// <summary>POST /api/job — creates a new job. Requires Recruiter role.</summary>
         [HttpPost]
         [Authorize(Roles = "Recruiter")]
         public async Task<IActionResult> CreateJob([FromBody] CreateJobDto jobDto)
         {
             var recruiterId = _currentUserService.RecruiterId;
-            var job = await _jobServices.CreateAsync(jobDto, recruiterId.Value);
-            return CreatedAtAction(nameof(GetJobById), new { id = job.Id }, job);
+            if (recruiterId is null)
+                return Forbid();
+
+            var id = await _mediator.Send(new CreateJobCommand
+            {
+                Title = jobDto.Title,
+                Description = jobDto.Description,
+                recruiterId = recruiterId.Value
+            });
+
+            return CreatedAtAction(nameof(GetJobById), new { id = id }, null);
         }
-        /// <summary>
-        /// PATCH /api/job/{id}/close — deactivates a job.
-        /// The recruiter id is taken from the authenticated user's JWT claims.
-        /// Requires Recruiter role.
-        /// </summary>
+
         [HttpPatch("{id}/close")]
         [Authorize(Roles = "Recruiter")]
         public async Task<IActionResult> CloseJob(int id)
@@ -51,7 +65,11 @@ namespace JobApplicationManagement.API.Controllers
                 return Forbid();
             try
             {
-                await _jobServices.CloseJobAsync(id, recruiterId.Value);
+                await _mediator.Send(new CloseJobCommand
+                {
+                    JobId = id,
+                    RecruiterId = recruiterId.Value
+                });
                 return NoContent();
             }
             catch (DomainException ex)

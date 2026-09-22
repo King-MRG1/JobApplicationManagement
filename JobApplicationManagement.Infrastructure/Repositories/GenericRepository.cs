@@ -22,9 +22,9 @@ namespace JobApplicationManagement.Infrastructure.Repositories
         {
             _context.Set<T>().Update(entity);
         }
-        public IEnumerable<T> Get()
+        public async Task<IEnumerable<T>> GetAsync()
         {
-            return _context.Set<T>().AsQueryable();
+            return await _context.Set<T>().ToListAsync();
         }
         public async Task<T?> GetByIdAsync(int id)
         {

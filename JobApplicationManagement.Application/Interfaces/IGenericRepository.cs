@@ -6,7 +6,7 @@ public interface IGenericRepository<T> where T : class
     {
         Task AddAsync(T entity);
         void Update(T entity);
-        IEnumerable<T> Get();
+        Task<IEnumerable<T>> GetAsync();
         Task<T> GetByIdAsync(int id);
         void Remove(T entity);
         Task SaveChangesAsync();

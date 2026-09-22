@@ -16,16 +16,15 @@ namespace JobApplicationManagement.Application.Services
             _applicationRepository = applicationRepository;
             _jobRepository = jobRepository;
         }
-        /// <summary>
-        /// Creates a new job application.
-        /// Validates that the target job exists and is currently active.
-        /// </summary>
         public async Task<JobApplicationResponseDto> CreateAsync(CreateJobApplicationDto dto, int candidateId)
         {
             var job = await _jobRepository.GetByIdAsync(dto.JobId)
                 ?? throw new DomainException($"Job with id {dto.JobId} was not found.");
             if (!job.IsActive)
                 throw new DomainException($"Job with id {dto.JobId} is no longer active and cannot accept applications.");
+            var existingApplication = await _applicationRepository.FindFirstAsync(a => a.CandidateId == candidateId && a.JobId == dto.JobId);
+            if (existingApplication != null)
+                throw new DomainException($"You have already applied for job with id {dto.JobId}.");
             var now = DateTime.UtcNow;
             var application = new JobCandidateApplication
             {

@@ -1,8 +1,13 @@
 using JobApplicationManagement.Application.Dtos.AuthDto;
 using JobApplicationManagement.Application.Dtos.CandidateDto;
+using JobApplicationManagement.Application.Features.Candidates.Commands.CreateCandidate;
+using JobApplicationManagement.Application.Features.Candidates.Queries.GetCandidateByUserId;
+using JobApplicationManagement.Application.Features.Recruiters.Commands.CreateRecruiter;
+using JobApplicationManagement.Application.Features.Recruiters.Queries.GetRecruiterByUserId;
+using JobApplicationManagement.Application.Interfaces;
 using JobApplicationManagement.Application.Services;
 using JobApplicationManagement.Domain.Entities;
-using JobApplicationManagement.Infrastructure.Services;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,24 +19,21 @@ namespace JobApplicationManagement.API.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly TokenService _tokenService;
-        private readonly RecruiterServices _recruiterServices;
-        private readonly CandidateServices _candidateServices;
+        private readonly ITokenService _tokenService;
+        private readonly IMediator _mediator;
         private readonly IConfiguration _configuration;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            TokenService tokenService,
-            RecruiterServices recruiterServices,
-            CandidateServices candidateServices,
+            ITokenService tokenService,
+            IMediator mediator,
             IConfiguration configuration)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _tokenService = tokenService;
-            _recruiterServices = recruiterServices;
-            _candidateServices = candidateServices;
+            _mediator = mediator;
             _configuration = configuration;
         }
 
@@ -67,16 +69,21 @@ namespace JobApplicationManagement.API.Controllers
             int? candidateId = null;
             if (normalizedRole == "Recruiter")
             {
-                var recruiter = await _recruiterServices.CreateAsync(dto.FullName, user.Id);
+                var recruiter = await _mediator.Send(new CreateRecruiterCommand
+                {
+                    Name = dto.FullName,
+                    UserId = user.Id
+                });
                 recruiterId = recruiter.Id;
             }
             else
             {
-               var candidate = await _candidateServices.CreateAsync(new CreateCandidateDto
+               var candidate = await _mediator.Send(new CreateCandidateCommand
                 {
                     Name = dto.FullName,
-                    CvUrl  = string.Empty,
-                }, user.Id);
+                    CvUrl = string.Empty,
+                    UserId = user.Id
+                });
                 candidateId = candidate.Id;
             }
             var roles = await _userManager.GetRolesAsync(user);
@@ -104,13 +111,13 @@ namespace JobApplicationManagement.API.Controllers
             int? recruiterId = null;
             if (roles.Contains("Recruiter"))
             {
-                var recruiter = await _recruiterServices.GetByUserIdAsync(user.Id);
+                var recruiter = await _mediator.Send(new GetRecruiterByUserIdQuery { UserId = user.Id });
                 recruiterId = recruiter?.Id;
             }
             int? candidateId = null;
             if (roles.Contains("Candidate"))
             {
-                var candidate = await _candidateServices.GetByUserIdAsync(user.Id);
+                var candidate = await _mediator.Send(new GetCandidateByUserIdQuery { UserId = user.Id });
                 candidateId = candidate?.Id;
             }
             var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "60");

@@ -1,4 +1,5 @@
-           using JobApplicationManagement.Application.Interfaces;
+using JobApplicationManagement.Application;
+using JobApplicationManagement.Application.Interfaces;
 using JobApplicationManagement.Application.Services;
 using JobApplicationManagement.Domain.Entities;
 using JobApplicationManagement.Infrastructure.Persistence;
@@ -58,13 +59,19 @@ namespace JobApplicationManagement.API
             builder.Services.AddScoped<CandidateServices>();
             builder.Services.AddScoped<RecruiterServices>();
             builder.Services.AddScoped<JobCandidateApplicationServices>();
+            builder.Services.AddMediatR(cfg => 
+            cfg.RegisterServicesFromAssembly(typeof(AssemblyReference).Assembly));
             // Infrastructure services
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<TokenService>();   // also register concrete for AuthController injection
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
             builder.Services.AddHttpContextAccessor();
             // ── OpenAPI ───────────────────────────────────────────────────────────────
-            builder.Services.AddOpenApi();
+            builder.Services.AddOpenApi(options =>
+            {
+                options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+            });
+
             var app = builder.Build();
             if (app.Environment.IsDevelopment())
             {

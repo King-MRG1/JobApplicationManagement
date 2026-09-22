@@ -1,9 +1,7 @@
-using JobApplicationManagement.Application.Dtos.CandidateDto;
+using JobApplicationManagement.Application.Features.Candidates.Queries.GetCandidateById;
+using JobApplicationManagement.Application.Features.Candidates.Queries.GetCandidates;
 using JobApplicationManagement.Application.Interfaces;
-using JobApplicationManagement.Application.Services;
-using JobApplicationManagement.Infrastructure.Migrations;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JobApplicationManagement.API.Controllers
@@ -12,35 +10,26 @@ namespace JobApplicationManagement.API.Controllers
     [ApiController]
     public class CandidateController : ControllerBase
     {
-        private readonly CandidateServices _candidateServices;
+        private readonly IMediator _mediator;
         private readonly ICurrentUserService _currentUserService;
-        public CandidateController(CandidateServices candidateServices, ICurrentUserService currentUserService)
+        public CandidateController(IMediator mediator, ICurrentUserService currentUserService)
         {
-            _candidateServices = candidateServices;
+            _mediator = mediator;
             _currentUserService = currentUserService;
         }
-        /// <summary>GET /api/candidate/{id}</summary>
+        [HttpGet("candidates")]
+        public async Task<IActionResult> GetCandidates()
+        {
+            var candidates = await _mediator.Send(new GetCandidatesQuery());
+            return Ok(candidates);
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCandidateById(int id)
         {
-            var candidate = await _candidateServices.GetByIdAsync(id);
+            var candidate = await _mediator.Send(new GetCandidateByIdQuery { Id = id });
             if (candidate is null)
                 return NotFound();
             return Ok(candidate);
         }
-        /// <summary>POST /api/candidate — creates a new candidate record.</summary>
-        //[HttpPost]
-        //[Authorize]
-        //public async Task<IActionResult> CreateCandidate([FromBody] CreateCandidateDto dto)
-        //{
-        //    var CandidateId =  _currentUserService.CandidateId;
-
-        //    if(CandidateId is null)
-        //    {
-        //        return Forbid();
-        //    }
-        //    var candidate = await _candidateServices.CreateAsync(dto, CandidateId);
-        //    return CreatedAtAction(nameof(GetCandidateById), new { id = candidate.Id }, candidate);
-        //}
     }
 }

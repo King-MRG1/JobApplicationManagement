@@ -1,7 +1,11 @@
 using JobApplicationManagement.Application.Dtos.JobApplicationDto;
+using JobApplicationManagement.Application.Features.JobCandidateApplications.Commands.CancelJobApplication;
+using JobApplicationManagement.Application.Features.JobCandidateApplications.Commands.CreateJobApplication;
+using JobApplicationManagement.Application.Features.JobCandidateApplications.Queries.GetJobApplicationById;
+using JobApplicationManagement.Application.Features.JobCandidateApplications.Queries.GetJobApplications;
 using JobApplicationManagement.Application.Interfaces;
-using JobApplicationManagement.Application.Services;
 using JobApplicationManagement.Domain.Exceptions;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace JobApplicationManagement.API.Controllers
@@ -10,23 +14,33 @@ namespace JobApplicationManagement.API.Controllers
     [ApiController]
     public class JobCandidateApplicationController : ControllerBase
     {
-        private readonly JobCandidateApplicationServices _applicationServices;
+        private readonly IMediator _mediator;
         private readonly ICurrentUserService _currentUserService;
-        public JobCandidateApplicationController(JobCandidateApplicationServices applicationServices, ICurrentUserService currentUserService)
+        public JobCandidateApplicationController(IMediator mediator, ICurrentUserService currentUserService)
         {
-            _applicationServices = applicationServices;
+            _mediator = mediator;
             _currentUserService = currentUserService;
         }
-        /// <summary>GET /api/jobcandidateapplication/{id}</summary>
+        [HttpGet("myApplications")]
+        public async Task<IActionResult> GetApplications()
+        {
+            var candidateId = _currentUserService.CandidateId;
+            if (candidateId is null)
+            {
+                return Forbid();
+            }
+            var applications = await _mediator.Send(new GetJobApplicationsQuery { CandidateId = candidateId.Value });
+            return Ok(applications);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetApplicationById(int id)
         {
-            var application = await _applicationServices.GetByIdAsync(id);
+            var application = await _mediator.Send(new GetJobApplicationByIdQuery { Id = id });
             if (application is null)
                 return NotFound();
             return Ok(application);
         }
-        /// <summary>POST /api/jobcandidateapplication — submits a new job application.</summary>
         [HttpPost]
         [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> CreateApplication([FromBody] CreateJobApplicationDto dto)
@@ -38,7 +52,11 @@ namespace JobApplicationManagement.API.Controllers
                 {
                     return Forbid();
                 }
-                var application = await _applicationServices.CreateAsync(dto, candidateId.Value);
+                var application = await _mediator.Send(new CreateJobApplicationCommand
+                {
+                    JobId = dto.JobId,
+                    CandidateId = candidateId.Value
+                });
                 return CreatedAtAction(nameof(GetApplicationById), new { id = application.Id }, application);
             }
             catch (DomainException ex)
@@ -46,10 +64,6 @@ namespace JobApplicationManagement.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        /// <summary>
-        /// PATCH /api/jobcandidateapplication/{id}/cancel — cancels an application.
-        /// Only allowed while status is Applied or UnderReview.
-        /// </summary>
         [HttpPatch("{id}/cancel")]
         [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> CancelApplication(int id)
@@ -61,7 +75,11 @@ namespace JobApplicationManagement.API.Controllers
                 {
                     return Forbid();
                 }
-                var application = await _applicationServices.CancelApplicationAsync(id, candidateId.Value);
+                var application = await _mediator.Send(new CancelJobApplicationCommand
+                {
+                    ApplicationId = id,
+                    CandidateId = candidateId.Value
+                });
                 return Ok(application);
             }
             catch (DomainException ex)

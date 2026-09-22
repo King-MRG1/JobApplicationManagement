@@ -7,6 +7,6 @@ namespace JobApplicationManagement.Application.Interfaces
 {
     public interface ITokenService
     {
-        string GenerateToken(ApplicationUser user, IList<string> roles);
+        string GenerateToken(ApplicationUser user, IList<string> roles, int? recruiterId = null, int? candidateId = null);
     }
 }
