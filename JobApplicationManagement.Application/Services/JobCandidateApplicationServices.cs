@@ -9,22 +9,30 @@ namespace JobApplicationManagement.Application.Services
     {
         private readonly IGenericRepository<JobCandidateApplication> _applicationRepository;
         private readonly IGenericRepository<Job> _jobRepository;
+        private readonly IBackgroundJobService _backgroundJobService;
+
         public JobCandidateApplicationServices(
             IGenericRepository<JobCandidateApplication> applicationRepository,
-            IGenericRepository<Job> jobRepository)
+            IGenericRepository<Job> jobRepository,
+            IBackgroundJobService backgroundJobService)
         {
             _applicationRepository = applicationRepository;
             _jobRepository = jobRepository;
+            _backgroundJobService = backgroundJobService;
         }
+
         public async Task<JobApplicationResponseDto> CreateAsync(CreateJobApplicationDto dto, int candidateId)
         {
             var job = await _jobRepository.GetByIdAsync(dto.JobId)
                 ?? throw new DomainException($"Job with id {dto.JobId} was not found.");
+
             if (!job.IsActive)
                 throw new DomainException($"Job with id {dto.JobId} is no longer active and cannot accept applications.");
+
             var existingApplication = await _applicationRepository.FindFirstAsync(a => a.CandidateId == candidateId && a.JobId == dto.JobId);
             if (existingApplication != null)
                 throw new DomainException($"You have already applied for job with id {dto.JobId}.");
+
             var now = DateTime.UtcNow;
             var application = new JobCandidateApplication
             {
@@ -34,10 +42,19 @@ namespace JobApplicationManagement.Application.Services
                 AppliedAt = now,
                 StatusUpdatedAt = now
             };
+
             await _applicationRepository.AddAsync(application);
             await _applicationRepository.SaveChangesAsync();
+
+            // Enqueue asynchronous background notification via Hangfire
+            _backgroundJobService.Enqueue<INotificationJobService>(service =>
+                service.SendApplicationNotificationAsync(
+                    application.Id,
+                    $"Application submitted by Candidate #{candidateId} for Job '{job.Title}' (Job #{dto.JobId})"));
+
             return MapToDto(application);
         }
+
         /// <summary>
         /// Cancels an existing application.
         /// Only allowed while the status is <see cref="JobApplicationStatus.Applied"/> or
@@ -48,10 +65,12 @@ namespace JobApplicationManagement.Application.Services
         {
             var application = await _applicationRepository.GetByIdAsync(applicationId)
                 ?? throw new DomainException($"Application with id {applicationId} was not found.");
+
             if (application.CandidateId != candidateId)
             {
                 throw new DomainException("You are not authorised to cancel this application.");
             }
+
             if (application.JobApplicationStatus != JobApplicationStatus.Applied &&
                 application.JobApplicationStatus != JobApplicationStatus.UnderReview)
             {
@@ -59,12 +78,22 @@ namespace JobApplicationManagement.Application.Services
                     $"Application cannot be cancelled when its status is '{application.JobApplicationStatus}'. " +
                     "Only 'Applied' or 'UnderReview' applications can be cancelled.");
             }
+
             application.JobApplicationStatus = JobApplicationStatus.Cancelled;
             application.StatusUpdatedAt = DateTime.UtcNow;
+
             _applicationRepository.Update(application);
             await _applicationRepository.SaveChangesAsync();
+
+            // Enqueue asynchronous background notification via Hangfire
+            _backgroundJobService.Enqueue<INotificationJobService>(service =>
+                service.SendApplicationNotificationAsync(
+                    application.Id,
+                    $"Application #{applicationId} has been cancelled by Candidate #{candidateId}"));
+
             return MapToDto(application);
         }
+
         public async Task<JobApplicationResponseDto?> GetByIdAsync(int id)
         {
             var application = await _applicationRepository.GetByIdAsync(id);

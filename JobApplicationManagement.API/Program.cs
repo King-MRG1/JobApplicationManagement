@@ -1,7 +1,10 @@
+using Hangfire;
+using JobApplicationManagement.API.Filters;
 using JobApplicationManagement.Application;
 using JobApplicationManagement.Application.Interfaces;
 using JobApplicationManagement.Application.Services;
 using JobApplicationManagement.Domain.Entities;
+using JobApplicationManagement.Infrastructure;
 using JobApplicationManagement.Infrastructure.Persistence;
 using JobApplicationManagement.Infrastructure.Repositories;
 using JobApplicationManagement.Infrastructure.Services;
@@ -66,6 +69,10 @@ namespace JobApplicationManagement.API
             builder.Services.AddScoped<TokenService>();   // also register concrete for AuthController injection
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
             builder.Services.AddHttpContextAccessor();
+
+            // ── Hangfire ─────────────────────────────────────────────────────────────
+            builder.Services.AddHangfireInfrastructure(builder.Configuration);
+
             // ── OpenAPI ───────────────────────────────────────────────────────────────
             builder.Services.AddOpenApi(options =>
             {
@@ -81,6 +88,14 @@ namespace JobApplicationManagement.API
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // ── Hangfire Dashboard ────────────────────────────────────────────────────
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                DashboardTitle = "Job Application Management - Hangfire Dashboard",
+                Authorization = new[] { new HangfireDashboardAuthorizationFilter(app.Environment) }
+            });
+
             app.MapControllers();
             app.Run();
         }
